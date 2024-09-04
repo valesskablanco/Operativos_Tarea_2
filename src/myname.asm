@@ -38,6 +38,11 @@ write_names:
     mov dx, START_Y
     call plot_L
 
+    ; Move to next letter position
+    add cx, LETTER_WIDTH
+    mov dx, START_Y
+    ;call plot_E
+
     jmp finish
 
 plot_V:
