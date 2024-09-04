@@ -1,57 +1,69 @@
-bits 16
-org 0x7c00 ; Memory Location 0x7c00 for Boot Loader
-%define SECTOR_AMOUNT 0x4
-jmp start
+bits 16                 ; 16-bit mode (real mode)
+org 0x7c00              ; Origin point for the boot loader (Memory location 0x7c00)
+%define SECTOR_AMOUNT 0x4  ; Define the number of sectors to read
+
+jmp start               ; Jump to the start label
 
 start:
-; Initializing registers
-cli
-xor ax, ax
-mov ds, ax
-mov ss, ax
-mov es, ax
-mov fs, ax
-mov gs, ax
-mov sp, 0x6ef0
+; Initializing segment registers and stack pointer
+cli                     ; Clear interrupts (disable them temporarily)
+xor ax, ax              ; Zero out AX register
+mov ds, ax              ; Set Data Segment (DS) to 0x0000
+mov ss, ax              ; Set Stack Segment (SS) to 0x0000
+mov es, ax              ; Set Extra Segment (ES) to 0x0000
+mov fs, ax              ; Set FS segment to 0x0000
+mov gs, ax              ; Set GS segment to 0x0000
+mov sp, 0x6ef0          ; Set Stack Pointer (SP) to 0x6ef0 (somewhere safe in memory)
+sti                     ; Enable interrupts
 
-; Display welcome message
-call print_welcome_message
+; Print welcome message
+call print_welcome_message  ; Call subroutine to print the welcome message
 
-; Read from hard drive and write to RAM
-mov ah, 0x02         ; BIOS read sectors function
-mov al, SECTOR_AMOUNT ; Number of sectors to read
-mov ch, 0            ; Cylinder number
-mov dh, 0            ; Head number
-mov cl, 2            ; Starting sector number (usually starts at 2 for MBR)
-mov bx, 0x8000       ; ES:BX points to the memory address where data is to be loaded
-mov es, bx
-xor bx, bx           ; Clear BX
-int 0x13             ; Call BIOS interrupt to read sectors
+; Wait for a key press before proceeding
+call wait_for_key_press     ; Call subroutine to wait for a key press
 
-; Jump to loaded code at 0x8000
-jmp 0x8000
+; Reset the disk system
+mov ah, 0                ; Function 0 of INT 0x13 (Reset Disk System)
+int 0x13                 ; Call BIOS Disk Service to reset the disk system
+
+; Read SECTOR_AMOUNT sectors from the hard drive into memory
+mov bx, 0x8000           ; Set BX to 0x8000, the memory address where the sectors will be loaded
+mov al, SECTOR_AMOUNT    ; AL holds the number of sectors to read (SECTOR_AMOUNT)
+mov ch, 0                ; Cylinder number (high byte, CH) = 0
+mov dh, 0                ; Head number (DH) = 0
+mov cl, 2                ; Sector number (CL) = 2 (sector numbers start at 1)
+mov ah, 2                ; Function 2 of INT 0x13 (Read Sectors From Drive)
+int 0x13                 ; Call BIOS Disk Service to read sectors
+jmp 0x8000               ; Jump to the loaded code at memory address 0x8000
 
 ; Print welcome message subroutine
 print_welcome_message:
-mov si, welcome_msg  ; Load the address of the message into SI
-call print_string    ; Call print_string to display the message
-ret                  ; Return to the caller
+mov si, welcome_msg      ; Load the address of the welcome message into Source Index (SI)
+call print_string        ; Call subroutine to print the string pointed to by SI
+ret                      ; Return from subroutine to caller
 
-; Printing functionality
+; Waiting for a key press subroutine
+wait_for_key_press:
+xor ax, ax               ; Clear AX register (set to 0)
+int 0x16                 ; BIOS interrupt to wait for a key press
+ret                      ; Return from subroutine to caller
+
+; Printing string subroutine
 print_string:
-mov ah, 0x0E         ; BIOS teletype function (print character)
+mov ah, 0x0E             ; BIOS teletype function (print character) in AH
 .print_next:
-lodsb                ; Load the next byte at [SI] into AL
-cmp al, 0            ; Check if we've reached the end of the string
-je .done             ; If so, jump to .done
-int 0x10             ; BIOS interrupt to print character in AL
-jmp .print_next      ; Loop to print the next character
+lodsb                    ; Load next byte from [SI] into AL, SI is automatically incremented
+cmp al, 0                ; Compare AL with 0 (end of string indicator)
+je .done                 ; If AL is 0, jump to done (end of string)
+int 0x10                 ; BIOS interrupt to print the character in AL
+jmp .print_next          ; Loop to print the next character
 .done:
-ret                  ; Return to the caller
+ret                      ; Return from subroutine to caller
 
-welcome_msg db 'Welcome to My Name!', 0
+; Data: Welcome message
+welcome_msg db 'Welcome to My Name! Press any key to start the game!', 0  ; Define a string and terminate it with 0
 
-; Padding and Signature
-times 510-($-$$) db 0 ; Fill remaining space with zeros
-db 0x55
-db 0xaa ; Magic number (boot loader identifier)
+; Padding and Boot Signature
+times 510-($-$$) db 0   ; Fill the rest of the 512-byte boot sector with zeros
+db 0x55                 ; Boot signature byte 1
+db 0xaa                 ; Boot signature byte 2 (0xAA55 indicates a valid boot sector)

@@ -5,4 +5,3 @@ all:
 	nasm -f bin src/myname.asm -o build/myname.bin
 	cat build/boot.bin build/myname.bin > game.bin
 	qemu-system-x86_64 -drive format=raw,file=game.bin
-
