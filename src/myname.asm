@@ -19,14 +19,14 @@ start:
     pop es ; extra segments from stack pop them
     xor di, di ; set register to 0
     xor ax, ax ; set register to 0
-    mov ax, 0x13 ; 320x200 resolution 4 colors mode
+    mov ax, 0x13 ; 320x200 resolution 256 colors mode
     int 0x10 ; video interrumpt
 
 
 start_loop:
     call start_message
 
-    mov si, 0 ; Init mirror register counter
+    mov si, 0 ; Init flag mirror/rotation
     mov bx, 0 ; Init degrees register counter
 
     mov ah, 0      ; Set up for keyboard input
@@ -88,7 +88,7 @@ rotate_left:
     jmp skip_reset
 
 rotate_right:
-    mov si, 0
+    mov si, 0   ; activate rotation
     sub bx, 1     ; Subtract 90 degrees when right arrow is pressed
     cmp bx, 0
     jge skip_reset ; Skip reset if degrees >= 0
@@ -97,7 +97,7 @@ rotate_right:
     jmp skip_reset
 
 mirror_up:
-    mov si, 1
+    mov si, 1 ; activate mirroring
     mov bx, 0
     jmp skip_reset
 
