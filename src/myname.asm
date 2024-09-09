@@ -4,9 +4,6 @@ jmp start;
 
 %define WHITE 15 ; white color for pixels
 %define BLACK 0
-%define START_X 100 ; starting x position
-%define START_Y 100 ; starting y position
-%define LETTER_WIDTH 3
 %define DEGREES 4
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -14,25 +11,24 @@ jmp start;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 start:
-    cli ; clr all interrumpts
-    push 0xA000 ; video memory graphics segment
-    pop es ; extra segments from stack pop them
-    xor di, di ; set register to 0
-    xor ax, ax ; set register to 0
-    mov ax, 0x13 ; 320x200 resolution 256 colors mode
-    int 0x10 ; video interrumpt
-
+    cli                 ; clr all interrumpts
+    push 0xA000         ; video memory graphics segment
+    pop es              ; extra segments from stack pop them
+    xor di, di          ; set register to 0
+    xor ax, ax          ; set register to 0
+    mov ax, 0x13        ; 320x200 resolution 256 colors mode
+    int 0x10            ; video interrumpt
 
 start_loop:
     call start_message
 
-    mov si, 0 ; Init flag mirror/rotation
-    mov bx, 0 ; Init degrees register counter
+    mov si, 0           ; Init flag mirror/rotation
+    mov bx, 0           ; Init degrees register counter
 
-    mov ah, 0      ; Set up for keyboard input
-    int 16h        ; BIOS interrupt for keyboard input
+    mov ah, 0           ; Set up for keyboard input
+    int 16h             ; BIOS interrupt for keyboard input
 
-    cmp ah, 1Ch    ; Enter key
+    cmp ah, 1Ch         ; Enter key
     je print_game
 
     jmp start_loop
@@ -48,27 +44,27 @@ print_game:
 
 game_loop:
 
-    mov ah, 01h    ; Check for keystroke
-    int 16h        ; BIOS interrupt to check for keystroke
+    mov ah, 01h         ; Check for keystroke
+    int 16h             ; BIOS interrupt to check for keystroke
 
-    jz game_loop      ; Jump if no key is available
+    jz game_loop        ; Jump if no key is available
 
-    mov ah, 0      ; Set up for keyboard input
-    int 16h        ; BIOS interrupt for keyboard input
+    mov ah, 0           ; Set up for keyboard input
+    int 16h             ; BIOS interrupt for keyboard input
     
-    cmp ah, 01h    ; ESC key
+    cmp ah, 01h         ; ESC key
     je finish_game
 
-    cmp ah, 48h    ; Up arrow key
+    cmp ah, 48h         ; Up arrow key
     je mirror_up
     
-    cmp ah, 50h    ; Down arrow key
+    cmp ah, 50h         ; Down arrow key
     je mirror_down
     
-    cmp ah, 4Bh    ; Left arrow key
+    cmp ah, 4Bh         ; Left arrow key
     je rotate_left
     
-    cmp ah, 4Dh    ; Right arrow key
+    cmp ah, 4Dh         ; Right arrow key
     je rotate_right
 
     ; If no arrow key was pressed, go back to start of the loop
@@ -76,28 +72,28 @@ game_loop:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INTERRUPT ROUTINES
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 rotate_left:
     mov si, 0
-    add bx, 1     ; Add 90 degrees when left arrow is pressed
+    add bx, 1           ; Add 90 degrees when left arrow is pressed
     cmp bx, DEGREES
-    jl skip_reset  ; Skip reset if under 360 degrees
-    sub bx, DEGREES  ; Reset rotation if over 360
+    jl skip_reset       ; Skip reset if under 360 degrees
+    sub bx, DEGREES     ; Reset rotation if over 360
 
     jmp skip_reset
 
 rotate_right:
-    mov si, 0   ; activate rotation
-    sub bx, 1     ; Subtract 90 degrees when right arrow is pressed
+    mov si, 0           ; activate rotation
+    sub bx, 1           ; Subtract 90 degrees when right arrow is pressed
     cmp bx, 0
-    jge skip_reset ; Skip reset if degrees >= 0
-    add bx, DEGREES   ; Reset to 360 if negative
+    jge skip_reset      ; Skip reset if degrees >= 0
+    add bx, DEGREES     ; Reset to 360 if negative
 
     jmp skip_reset
 
 mirror_up:
-    mov si, 1 ; activate mirroring
+    mov si, 1           ; activate mirroring
     mov bx, 0
     jmp skip_reset
 
@@ -125,20 +121,20 @@ write_names_by_key:
 write_names_by_rotation:
 
     cmp bx, 0
-    je write_names_0      ; Plot with 0-degree rotation
+    je write_names_0        ; Plot with 0-degree rotation
     
     cmp bx, 1
-    je write_names_90     ; Plot with 90-degree rotation
+    je write_names_90       ; Plot with 90-degree rotation
 
     cmp bx, 2
-    je write_names_180     ; Plot with 180-degree rotation
+    je write_names_180      ; Plot with 180-degree rotation
 
     cmp bx, 3
-    je write_names_270     ; Plot with 270-degree rotation
+    je write_names_270      ; Plot with 270-degree rotation
 
 write_names_by_mirroring:
     cmp bx, 0
-    je write_names_up      ; Plot with mirroring up
+    je write_names_0        ; Plot with mirroring up
     
     cmp bx, 1
     je write_names_down     ; Plot with mirroring down
@@ -149,229 +145,712 @@ write_names_by_mirroring:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 write_names_0:
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
+    call randomPosition
 
-    call plot_V_0
+    call plot_VALE_0
+    call plot_FELIPE_0
 
     jmp game_loop
 
 write_names_90:
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
+    call randomPosition
 
-    call plot_V_90
+    call plot_VALE_90
+    call plot_FELIPE_90
 
     jmp game_loop
 
 write_names_180:
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
+    call randomPosition
 
-    call plot_V_180
+    call plot_VALE_180
+    call plot_FELIPE_180
 
     jmp game_loop
 
 write_names_270:
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
+    call randomPosition
 
-    call plot_V_270
-
-    jmp game_loop
-
-write_names_up:
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
-
-    call plot_A
+    call plot_VALE_270
+    call plot_FELIPE_270
 
     jmp game_loop
 
 write_names_down:    
-    mov ah, 0xc ; write pixel
-    mov al, WHITE ; color WHITE
-    mov bh, 0x00 ; let page to 0
-    mov cx, START_X ; x position
-    mov dx, START_Y ; y position
+    call randomPosition
 
-    call plot_L
+    call plot_VALE_DOWN
+    call plot_FELIPE_DOWN
 
     jmp game_loop
 
+randomPosition:
+
+    ; Generar valor aleatorio para START_X
+    mov ah, 0x00             ; función para obtener la hora del BIOS
+    int 0x1A                 ; llamada a la interrupción para obtener la hora
+    mov bp, dx               ; usa parte de la hora como base aleatoria
+    and bp, 259              ; limita el valor aleatorio de START_X a 0-259
+
+    ; Generar valor aleatorio para START_Y
+    mov ah, 0x00             ; función para obtener nuevamente la hora del BIOS
+    int 0x1A                 ; llamada a la interrupción para obtener la hora
+    mov si, dx               ; usa otra parte de la hora como base aleatoria
+    and si, 139              ; limita el valor aleatorio de START_Y a 0-139
+
+    ret
+
+initalPosition:
+    mov cx, bp 
+    mov dx, si
+    ret
+
+nextChar_0:
+    add bp, 6
+    ret
+
+nextChar_90:
+    sub si, 6
+    ret
+
+nextChar_180:
+    sub bp, 6
+    ret
+
+nextChar_270:
+    add si, 6
+    ret
+
+plot_VALE_0:
+    call plot_V_0
+
+    call nextChar_0
+    call plot_A_0
+
+    call nextChar_0
+    call plot_L_0
+
+    call nextChar_0
+    call plot_E_0
+
+    ret
+
+plot_FELIPE_0:
+    call nextChar_0
+    call plot_F_0
+
+    call nextChar_0
+    call plot_E_0
+
+    call nextChar_0
+    call plot_L_0
+
+    call nextChar_0
+    call plot_I_0
+
+    call nextChar_0
+    call plot_P_0
+
+    call nextChar_0
+    call plot_E_0
+
+    ret
+
+plot_VALE_90:
+    call plot_V_90
+
+    call nextChar_90
+    call plot_A_90
+
+    call nextChar_90
+    call plot_L_90
+
+    call nextChar_90
+    call plot_E_90
+
+    ret
+
+plot_FELIPE_90:
+    call nextChar_90
+    call plot_F_90
+
+    call nextChar_90
+    call plot_E_90
+
+    call nextChar_90
+    call plot_L_90
+
+    call nextChar_90
+    call plot_I_90
+
+    call nextChar_90
+    call plot_P_90
+
+    call nextChar_90
+    call plot_E_90
+
+    ret
+
+plot_VALE_180:
+    call plot_V_180
+
+    call nextChar_180
+    call plot_A_180
+
+    call nextChar_180
+    call plot_L_180
+
+    call nextChar_180
+    call plot_E_180
+
+    ret
+
+plot_FELIPE_180:
+    call nextChar_180
+    call plot_F_180
+
+    call nextChar_180
+    call plot_E_180
+
+    call nextChar_180
+    call plot_L_180
+
+    call nextChar_180
+    call plot_I_180
+
+    call nextChar_180
+    call plot_P_180
+
+    call nextChar_180
+    call plot_E_180
+
+    ret
+
+plot_VALE_270:
+    call plot_V_270
+
+    call nextChar_270
+    call plot_A_270
+
+    call nextChar_270
+    call plot_L_270
+
+    call nextChar_270
+    call plot_E_270
+
+    ret
+
+plot_FELIPE_270:
+    call nextChar_270
+    call plot_F_270
+
+    call nextChar_270
+    call plot_E_270
+
+    call nextChar_270
+    call plot_L_270
+
+    call nextChar_270
+    call plot_I_270
+
+    call nextChar_270
+    call plot_P_270
+
+    call nextChar_270
+    call plot_E_270
+
+    ret
+
+plot_VALE_DOWN:
+    call plot_V_DOWN
+
+    call nextChar_0
+    call plot_A_DOWN
+
+    call nextChar_0
+    call plot_L_DOWN
+
+    call nextChar_0
+    call plot_E_DOWN
+
+    ret
+
+plot_FELIPE_DOWN:
+    call nextChar_0
+    call plot_F_DOWN
+
+    call nextChar_0
+    call plot_E_DOWN
+
+    call nextChar_0
+    call plot_L_DOWN
+
+    call nextChar_0
+    call plot_I_DOWN
+
+    call nextChar_0
+    call plot_P_DOWN
+
+    call nextChar_0
+    call plot_E_DOWN
+
+    ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PRINTING LETTERS ROUTINES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 plot_V_0:
-    ; Plotting points for 'V'
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel 
-    inc cx
-    dec dx
-    call plot_pixel 
-    inc cx
-    dec dx
-    call plot_pixel 
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_A_0:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_5
+
+    ret
+
+plot_L_0:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_E_0:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_5
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_F_0:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_5
+
+    ret
+
+plot_I_0:
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_P_0:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_circule_1
+
     ret
 
 plot_V_90:
-    ; Plotting points for 'V'
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel
-    inc cx
-    dec dx
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel 
-    dec cx
-    dec dx
-    call plot_pixel 
-    dec cx
-    dec dx
-    call plot_pixel 
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_A_90:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_L_90:
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_E_90:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_F_90:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_I_90:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_5
+
+    ret
+
+plot_P_90:
+    call initalPosition
+    call plot_line_6
+
+    call initalPosition
+    call plot_circule_3
+
     ret
 
 plot_V_180:
-    ; Plotting points for 'V'
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel
-    dec cx
-    dec dx
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel 
-    dec cx
-    inc dx
-    call plot_pixel 
-    dec cx
-    inc dx
-    call plot_pixel 
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_A_180:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_5
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_L_180:
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_E_180:
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_5
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_F_180:
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_5
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_I_180:
+    call plot_I_0
+    ret
+
+plot_P_180:
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_circule_2
+
     ret
 
 plot_V_270:
-    ; Plotting points for 'V'
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel
-    dec cx
-    inc dx
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel
-    inc cx
-    inc dx
-    call plot_pixel 
-    inc cx
-    inc dx
-    call plot_pixel 
-    inc cx
-    inc dx
-    call plot_pixel 
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_6
+
     ret
 
-plot_A:
-    ; Plotting points for 'A'
+plot_A_270:
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_L_270:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_E_270:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_F_270:
+    call initalPosition
+    call plot_line_2
+
+    call initalPosition
+    call plot_line_3
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_I_270:
+    call plot_I_90
+
+    ret
+
+plot_P_270:
+    call initalPosition
+    call plot_line_4
+
+    call initalPosition
+    call plot_circule_4
+
+    ret
+
+plot_V_DOWN:
+    call plot_V_180
+
+    ret
+
+plot_A_DOWN:
+    call plot_A_180
+
+    ret
+
+plot_L_DOWN:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_4
+
+    ret
+
+plot_E_DOWN:
+    call plot_E_0
+
+    ret
+
+plot_F_DOWN:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_line_5
+
+    call initalPosition
+    call plot_line_6
+
+    ret
+
+plot_I_DOWN:
+    call plot_I_0
+
+    ret
+
+plot_P_DOWN:
+    call initalPosition
+    call plot_line_1
+
+    call initalPosition
+    call plot_circule_2
+
+    ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; PRINTING LINES ROUTINES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+plot_line_1:
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    ret
+
+plot_line_2:
+    add cx, 2
+    call plot_line_1
+    ret
+
+plot_line_3:
+    add cx, 4
+    call plot_line_1
+    ret
+
+plot_line_4:
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    ret
+
+plot_line_5:
+    add dx, 2
+    call plot_line_4
+    ret
+
+plot_line_6:
     add dx, 4
-    call plot_pixel 
-    inc cx
-    dec dx
-    call plot_pixel  
-    inc cx
-    dec dx
-    call plot_pixel
-    inc cx
-    call plot_pixel  
-    inc cx
-    call plot_pixel  
-    inc cx
-    call plot_pixel  
-    sub cx, 2
-    dec dx
-    call plot_pixel  
-    inc cx
-    dec dx
-    call plot_pixel  
-    inc cx
-    inc dx
-    call plot_pixel 
-    inc cx
-    inc dx
-    call plot_pixel 
-    inc cx
-    inc dx
-    call plot_pixel 
-    inc cx
-    inc dx
-    call plot_pixel 
+    call plot_line_4
     ret
 
-plot_L:
+plot_circule_1:
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc cx
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    inc dx
+    call plot_pixel
+    dec cx
+    call plot_pixel
+    dec cx
+    call plot_pixel
+    dec cx
+    call plot_pixel
+    dec cx
+    call plot_pixel
+    dec dx
+    call plot_pixel
+    ret
+
+plot_circule_2:
+    add dx, 2
+    call plot_circule_1
+    ret
+
+plot_circule_3:
     call plot_pixel
     inc dx
     call plot_pixel
@@ -385,10 +864,21 @@ plot_L:
     call plot_pixel
     inc cx
     call plot_pixel
-    inc cx
+    dec dx
     call plot_pixel
-    inc cx
+    dec dx
     call plot_pixel
+    dec dx
+    call plot_pixel
+    dec dx
+    call plot_pixel
+    dec cx
+    call plot_pixel
+    ret
+
+plot_circule_4:
+    add cx, 2
+    call plot_circule_3
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -396,6 +886,9 @@ plot_L:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 plot_pixel:
+    mov ah, 0xc ; write pixel
+    mov al, WHITE ; color WHITE
+    mov bh, 0x00 ; let page to 0
     int 0x10 ; video interrupt
     ret
 
