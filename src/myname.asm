@@ -151,7 +151,7 @@ write_names_by_mirroring:
     je write_names_0            ; Plot with mirroring down
 
     cmp bx, 2
-    je write_names_0           ; Plot with mirroring down
+    je write_names_down           ; Plot with mirroring down
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
