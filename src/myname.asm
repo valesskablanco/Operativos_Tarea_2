@@ -5,6 +5,7 @@ jmp start;
 %define WHITE 15 ; white color for pixels
 %define BLACK 0
 %define DEGREES 4
+%define MIRROR_MAX 3
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INITIALIZING GAME
@@ -51,8 +52,11 @@ game_loop:
 
     mov ah, 0           ; Set up for keyboard input
     int 16h             ; BIOS interrupt for keyboard input
+
+    cmp ah, 13h         ; R key (reset)
+    je start
     
-    cmp ah, 01h         ; ESC key
+    cmp ah, 01h         ; ESC key (finish game)
     je finish_game
 
     cmp ah, 48h         ; Up arrow key
@@ -94,12 +98,19 @@ rotate_right:
 
 mirror_up:
     mov si, 1           ; activate mirroring
-    mov bx, 0
+    add bx, 1
+    cmp bx, MIRROR_MAX
+    jl skip_reset
+    sub bx, 1
+
     jmp skip_reset
 
 mirror_down:
     mov si, 1
-    mov bx, 1  
+    sub bx, 1 
+    cmp bx, 0
+    jge skip_reset
+    add bx, 1
     jmp skip_reset
 
 skip_reset:
@@ -130,14 +141,17 @@ write_names_by_rotation:
     je write_names_180      ; Plot with 180-degree rotation
 
     cmp bx, 3
-    je write_names_270      ; Plot with 270-degree rotation
+    je write_names_270          ; Plot with 270-degree rotation
 
 write_names_by_mirroring:
     cmp bx, 0
-    je write_names_0        ; Plot with mirroring up
+    je write_names_down        ; Plot with mirroring up
     
     cmp bx, 1
-    je write_names_down     ; Plot with mirroring down
+    je write_names_0            ; Plot with mirroring down
+
+    cmp bx, 2
+    je write_names_0           ; Plot with mirroring down
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
