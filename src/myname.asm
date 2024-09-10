@@ -200,17 +200,19 @@ write_names_down:
 
 randomPosition:
 
-    ; Generar valor aleatorio para START_X
+    ; Generar valor aleatorio para START_X (entre 60 y 300)
     mov ah, 0x00             ; función para obtener la hora del BIOS
     int 0x1A                 ; llamada a la interrupción para obtener la hora
     mov bp, dx               ; usa parte de la hora como base aleatoria
-    and bp, 259              ; limita el valor aleatorio de START_X a 0-259
+    and bp, 199              ; limita el valor aleatorio de START_X a 0-199
+    add bp, 60               ; ajusta el valor para estar entre 60 y 259
 
-    ; Generar valor aleatorio para START_Y
+    ; Generar valor aleatorio para START_Y (entre 60 y 200)
     mov ah, 0x00             ; función para obtener nuevamente la hora del BIOS
     int 0x1A                 ; llamada a la interrupción para obtener la hora
     mov si, dx               ; usa otra parte de la hora como base aleatoria
-    and si, 139              ; limita el valor aleatorio de START_Y a 0-139
+    and si, 79              ; limita el valor aleatorio de START_Y a 0-79
+    add si, 60               ; ajusta el valor para estar entre 60 y 139
 
     ret
 
